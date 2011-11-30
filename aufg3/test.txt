@@ -1,0 +1,10 @@
+dup worked quite well!
+total 92
+drwxr-xr-x 2 hagen hagen  4096 2011-11-18 16:10 .
+drwxr-xr-x 6 hagen hagen  4096 2011-11-17 11:03 ..
+-rw-r--r-- 1 hagen hagen 46201 2011-11-17 11:04 a3.pdf
+-rw-r--r-- 1 hagen hagen   999 2011-11-18 13:50 erzeuge-datei.c
+-rwxr-xr-x 1 hagen hagen  8933 2011-11-18 10:51 erzeuge-datei.o
+-rw-r--r-- 1 hagen hagen  1097 2011-11-18 16:10 mist.c
+-rwxr-xr-x 1 hagen hagen  8923 2011-11-18 16:10 mist.o
+-rwxr-xr-x 1 hagen hagen   483 2011-11-18 16:10 test.txt
