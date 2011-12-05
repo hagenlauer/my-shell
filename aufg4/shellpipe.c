@@ -47,3 +47,4 @@ void pipe_cmd(char** cmd1, char** cmd2) {
   } else
     waitpid(pid, NULL, 0);
 }
+

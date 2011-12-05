@@ -56,7 +56,7 @@ void init_signalbehandlung(){
 }
 
 int main(int argc, char *argv[]){
-  int  zeigen=0, ausfuehren=1;
+  int  zeigen=1, ausfuehren=1;
   int status, i;
 
   init_signalbehandlung();
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
 
   while(1){
     int res;
-    fputs(">> ", stdout);
+    fputs("MyShell>> ", stdout);
     fflush(stdout);
     res=yyparse();
     if(res==0){

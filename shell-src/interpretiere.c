@@ -26,10 +26,21 @@ void do_execvp(int argc, char **args){
 
 int interpretiere_pipeline(Kommando k){
   /* NOT IMPLEMENTED */
+  fputs("pipe erkannt!\n", stderr);
+  
 }
 
 int umlenkungen(Kommando k){
   /* Umlenkungen bearbeiten */
+  Liste ul = k->u.einfach.umlenkungen; //das klappt schonmal, jetzt hier die ganze open scheisse einbauen
+  Umlenkung *u;
+  while(ul){
+      u = listeKopf(ul);
+      fprintf(stderr, "%d%s %s\n", u->filedeskriptor, u->modus==READ ? "< " : u->modus==WRITE ? "> " : ">> ", u->pfad);
+      ul = listeRest(ul);
+  }
+
+  fputs("umlenkung(Kommando k)!\n", stderr);
   return 0;
 }
 
@@ -48,13 +59,13 @@ int aufruf(Kommando k, int forkexec){
       return(-1);
     case 0:
       if(umlenkungen(k))
-	exit(1);
+	    exit(1);
       do_execvp(k->u.einfach.wortanzahl, k->u.einfach.worte);
       abbruch("interner Fehler 001"); /* sollte nie ausgeführt werden */
     default:
       if(k->endeabwarten)
-        /* So einfach geht das hier nicht! */
-	waitpid(pid, NULL, 0);
+        /* So einfach geht das hier nicht! */ /*hier müssen tabellen einträge gemacht werden*/
+	      waitpid(pid, NULL, 0);
       return 0;
     }
   }
@@ -117,6 +128,36 @@ int interpretiere(Kommando k, int forkexec){
       }
     }
     return status;
+  case K_PIPE:
+    {
+      fputs("ohooo eine pipe!\n", stderr);
+      status=interpretiere_pipeline(k);
+    }
+    return status;
+  case K_UND:
+    {
+      fputs("bedingte ausfuehrung UND!\n", stderr); 
+      Liste l = k->u.sequenz.liste;
+      while(!listeIstleer(l) && status == 0){
+         status=interpretiere ((Kommando)listeKopf(l), forkexec);
+         l=listeRest(l);
+      }
+      return status;
+    }
+  case K_ODER:
+    {
+      fputs("bedingte ausfuehrung ODER!\n", stderr); 
+      Liste l = k->u.sequenz.liste;
+      while(!listeIstleer(l)){
+         status=interpretiere ((Kommando)listeKopf(l), forkexec);
+         l=listeRest(l);
+         if(status == 0){
+           /*manuelles break*/
+           return status;
+         }
+      }
+      return status;
+    }
   default:
     fputs("unbekannter Kommandotyp, Bearbeitung nicht implementiert\n", stderr);
     break;
