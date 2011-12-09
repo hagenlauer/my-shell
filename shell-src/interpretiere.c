@@ -16,6 +16,7 @@
 #include "variablen.h"
 
 int interpretiere(Kommando k, int forkexec);
+int assemble_pipeline2(Liste l, int descr);
 
 void do_execvp(int argc, char **args){
   execvp(*args, args);
@@ -24,23 +25,69 @@ void do_execvp(int argc, char **args){
   exit(1);
 }
 
-int interpretiere_pipeline(Kommando k){
-  /* NOT IMPLEMENTED */
-  fputs("pipe erkannt!\n", stderr);
-  
+int assemble_pipeline2(Liste l, int descr){
+  Kommando k = (Kommando)listeKopf(l);
+  int fds[2];
+  if(!listeIstleer(listeRest(l))){ //if not is end of pipe
+    pipe(fds);
+  }
+  pid_t pid=fork();
+  switch(pid){
+    case -1:
+      perror("Fehler bei fork @pipe"); 
+      return(-1);
+    case 0: // child
+      if(dup2(descr,0) == -1){perror("Error dup2 descr -> 0 failed");fprintf(stderr, "descr: %d\n", fds[1]);exit(1);} //read from given Descriptor
+      if(close(descr) == -1){perror("Error close descr");exit(1);}
+      if(!listeIstleer(listeRest(l))){ // !=END else do nothing to stdout
+        if(dup2(fds[1],1) == -1){perror("Error dup2 fds[1]->1");fprintf(stderr, "descr: %d\n", fds[1]);exit(1);}
+        if(close(fds[1]) == -1){perror("Error close fds[1]");exit(1);}
+      }
+      interpretiere(k, 0); // exit on status here
+      return 0;
+    default:
+      if(!listeIstleer(listeRest(l))){
+        if(close(fds[1]) == -1){perror("Parent couldn't close the pipe!"); exit(1);} //close unused descriptor
+        assemble_pipeline2(listeRest(l),fds[0]); //return descr of new pipe
+      } 
+      waitpid(pid, NULL, 0);
+      return 0;
+  }
 }
+
+
+int interpretiere_pipeline(Kommando k){
+  Liste l = k->u.sequenz.liste;
+  assemble_pipeline2(l,0);
+  return 0;
+}
+
 
 int umlenkungen(Kommando k){
   /* Umlenkungen bearbeiten */
   Liste ul = k->u.einfach.umlenkungen; //das klappt schonmal, jetzt hier die ganze open scheisse einbauen
   Umlenkung *u;
+  int fd;
   while(ul){
+      u = listeKopf(ul);
+      fd = -1; /*default setting it to error*/
+      if(u->modus==READ){
+        fd = open(u->pfad, O_RDONLY, 0640); /*not tested, is the last arg necessary?*/
+      }
+      if(u->modus==WRITE){
+        fd = open(u->pfad, O_WRONLY | O_CREAT | O_TRUNC, 0640);
+      }
+      if(u->modus==APPEND){
+        fd = open(u->pfad, O_WRONLY | O_CREAT | O_APPEND, 0640);
+      }
+      if(fd==-1){perror("Could not open file! Does it exist?\n");}
+      if(dup2(fd,u->filedeskriptor)==-1){perror("Error in dup2()!\n");};
       u = listeKopf(ul);
       fprintf(stderr, "%d%s %s\n", u->filedeskriptor, u->modus==READ ? "< " : u->modus==WRITE ? "> " : ">> ", u->pfad);
       ul = listeRest(ul);
   }
 
-  fputs("umlenkung(Kommando k)!\n", stderr);
+  if(ul)fputs("umlenkung(Kommando k)!\n", stderr);
   return 0;
 }
 
@@ -50,7 +97,7 @@ int aufruf(Kommando k, int forkexec){
      oder Subprozess (forkexec==1)
   */
      
-  if(forkexec){
+  if(forkexec==1){
     int pid=fork();
 
     switch (pid){
@@ -68,14 +115,21 @@ int aufruf(Kommando k, int forkexec){
 	      waitpid(pid, NULL, 0);
       return 0;
     }
-  }
+  }else if (forkexec == 2){ /*testausgabe*/
+      //fputs("lol\n",stderr);
+      kommandoZeigen(k);
+      exit(1);
+      return 0;
+  }else if(forkexec == 0){
 
-  /* nur exec, kein fork */
-  if(umlenkungen(k))
+    /* nur exec, kein fork */
+    if(umlenkungen(k))
     exit(1);
-  do_execvp(k->u.einfach.wortanzahl, k->u.einfach.worte);
-  abbruch("interner Fehler 001"); /* sollte nie ausgeführt werden */
-  exit(1);
+    do_execvp(k->u.einfach.wortanzahl, k->u.einfach.worte);
+    abbruch("interner Fehler 001"); /* sollte nie ausgeführt werden */
+    exit(1);
+    return 1;
+  }
 }
 
 
@@ -111,7 +165,7 @@ int interpretiere_einfach(Kommando k, int forkexec){
   return aufruf(k, forkexec);
 }
 
-int interpretiere(Kommando k, int forkexec){
+int interpretiere(Kommando k, int forkexec){ /*evtl forkexec manipulieren f. exec ohne fork*/
   int status;
 
   switch(k->typ){
@@ -130,13 +184,11 @@ int interpretiere(Kommando k, int forkexec){
     return status;
   case K_PIPE:
     {
-      fputs("ohooo eine pipe!\n", stderr);
       status=interpretiere_pipeline(k);
     }
     return status;
   case K_UND:
-    {
-      fputs("bedingte ausfuehrung UND!\n", stderr); 
+    { 
       Liste l = k->u.sequenz.liste;
       while(!listeIstleer(l) && status == 0){
          status=interpretiere ((Kommando)listeKopf(l), forkexec);
@@ -146,7 +198,6 @@ int interpretiere(Kommando k, int forkexec){
     }
   case K_ODER:
     {
-      fputs("bedingte ausfuehrung ODER!\n", stderr); 
       Liste l = k->u.sequenz.liste;
       while(!listeIstleer(l)){
          status=interpretiere ((Kommando)listeKopf(l), forkexec);
@@ -159,7 +210,7 @@ int interpretiere(Kommando k, int forkexec){
       return status;
     }
   default:
-    fputs("unbekannter Kommandotyp, Bearbeitung nicht implementiert\n", stderr);
+    fputs("unbekannter Kommandotyp\n", stderr);
     break;
   }
   return 0;
