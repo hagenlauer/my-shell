@@ -52,14 +52,14 @@ extern int interpretiere(Kommando k, int forkexec);
 void signal_callback_handler(int signum)
 {
   printf("Caught signal %d\n",signum);
-  // Cleanup!!! and close up stuff here
-  // Terminate program
-  //exit(signum);
+  /* Cleanup!!! and close up stuff here
+     Terminate program
+    exit(signum); */
 }
 
 
 void endesubprozess (int sig){
-  //was soll ich hier machen?!?
+  /*was soll ich hier machen?!?*/
 }
 
 void init_signalbehandlung(){
@@ -72,13 +72,13 @@ int main(int argc, char *argv[]){
   int  zeigen=1, ausfuehren=1;
   int status, i;
 
-  //init_signalbehandlung();
+  init_signalbehandlung();
 
   yydebug=0;
 
   for(i=1; i<argc; i++){
     if (!strcmp(argv[i],"--zeige"))
-      zeigen=1;
+      zeigen=0;
     else if  (!strcmp(argv[i],"--noexec"))
       ausfuehren=0;
     else if  (!strcmp(argv[i],"--yydebug"))

@@ -28,27 +28,28 @@ void do_execvp(int argc, char **args){
 int assemble_pipeline2(Liste l, int descr){
   Kommando k = (Kommando)listeKopf(l);
   int fds[2];
-  if(!listeIstleer(listeRest(l))){ //if not is end of pipe
+  pid_t pid;
+  if(!listeIstleer(listeRest(l))){ /*if not is end of pipe*/
     pipe(fds);
   }
-  pid_t pid=fork();
+  pid=fork();
   switch(pid){
     case -1:
       perror("Fehler bei fork @pipe"); 
       return(-1);
-    case 0: // child
-      if(dup2(descr,0) == -1){perror("Error dup2 descr -> 0 failed");fprintf(stderr, "descr: %d\n", fds[1]);exit(1);} //read from given Descriptor
+    case 0: /* child */
+      if(dup2(descr,0) == -1){perror("Error dup2 descr -> 0 failed");fprintf(stderr, "descr: %d\n", fds[1]);exit(1);} /*read from given Descriptor*/
       if(close(descr) == -1){perror("Error close descr");exit(1);}
-      if(!listeIstleer(listeRest(l))){ // !=END else do nothing to stdout
+      if(!listeIstleer(listeRest(l))){ /* !=END else do nothing to stdout*/
         if(dup2(fds[1],1) == -1){perror("Error dup2 fds[1]->1");fprintf(stderr, "descr: %d\n", fds[1]);exit(1);}
         if(close(fds[1]) == -1){perror("Error close fds[1]");exit(1);}
       }
-      interpretiere(k, 0); // exit on status here
+      interpretiere(k, 0); /* exit on status here */
       return 0;
     default:
       if(!listeIstleer(listeRest(l))){
-        if(close(fds[1]) == -1){perror("Parent couldn't close the pipe!"); exit(1);} //close unused descriptor
-        assemble_pipeline2(listeRest(l),fds[0]); //return descr of new pipe
+        if(close(fds[1]) == -1){perror("Parent couldn't close the pipe!"); exit(1);} /*close unused descriptor*/
+        assemble_pipeline2(listeRest(l),fds[0]); /*return descr of new pipe*/
       } 
       waitpid(pid, NULL, 0);
       return 0;
@@ -65,7 +66,7 @@ int interpretiere_pipeline(Kommando k){
 
 int umlenkungen(Kommando k){
   /* Umlenkungen bearbeiten */
-  Liste ul = k->u.einfach.umlenkungen; //das klappt schonmal, jetzt hier die ganze open scheisse einbauen
+  Liste ul = k->u.einfach.umlenkungen; /*das klappt schonmal, jetzt hier die ganze open scheisse einbauen*/
   Umlenkung *u;
   int fd;
   while(ul){
@@ -109,6 +110,7 @@ int aufruf(Kommando k, int forkexec){
 	    exit(1);
       do_execvp(k->u.einfach.wortanzahl, k->u.einfach.worte);
       abbruch("interner Fehler 001"); /* sollte nie ausgeführt werden */
+      return(-1);
     default:
       if(k->endeabwarten)
         /* So einfach geht das hier nicht! */ /*hier müssen tabellen einträge gemacht werden*/
@@ -116,7 +118,7 @@ int aufruf(Kommando k, int forkexec){
       return 0;
     }
   }else if (forkexec == 2){ /*testausgabe*/
-      //fputs("lol\n",stderr);
+      /*fputs("lolkaese\n",stderr);*/
       kommandoZeigen(k);
       exit(1);
       return 0;
