@@ -9,9 +9,9 @@
   Syntaxbäume für erfolgreich analysierte Unterstrukturen des
   fehlerhaften Kommandos nicht gelöscht.
 
-  Beispiel: if test ! -d /tmp; then mkdir /tmp; else echo "/tmp vorhanden" fi
+  Beispiel: if test ! -d /tmp; then mkdir /tmp; else echo "/tmp vorhanden" 
 
-  Die Analyse wird mit Fehlermeldung abgebrochen, weil vor dem "fi" das
+  Die Analyse wird mit Fehlermeldung abgebrochen, weil vor dem "fi" das 
   obligatorische Semikolon fehlt. Im Heap stehen zu diesem Zeitpunkt die
   Bäume für das test- und das mkdir-Kommando. Diese verbleiben als Müll
   im Heap, da die Verweise ausschließlich auf dem Parser-Stack stehen,
@@ -26,6 +26,7 @@
      im Fehlerfall explizit vorgenommen wird.
 
   Da beides die Grammatik aber stark aufbläht, wird darauf verzichtet.
+  Genau.
 */
 
 #include <unistd.h>
@@ -51,25 +52,23 @@ extern int interpretiere(Kommando k, int forkexec);
 
 void signal_callback_handler(int signum)
 {
-  printf("Caught signal %d\n",signum);
+  /*printf("Caught signal %d\n",signum);*/
   /* Cleanup!!! and close up stuff here
      Terminate program
     exit(signum); */
 }
-
 
 void endesubprozess (int sig){
   /*was soll ich hier machen?!?*/
 }
 
 void init_signalbehandlung(){
-
   /*Soll hier noch mehr rein?*/
   signal(SIGCHLD, signal_callback_handler);
 }
 
 int main(int argc, char *argv[]){
-  int  zeigen=1, ausfuehren=1;
+  int  zeigen=0, ausfuehren=1;
   int status, i;
 
   init_signalbehandlung();
@@ -78,7 +77,7 @@ int main(int argc, char *argv[]){
 
   for(i=1; i<argc; i++){
     if (!strcmp(argv[i],"--zeige"))
-      zeigen=0;
+      zeigen=1;
     else if  (!strcmp(argv[i],"--noexec"))
       ausfuehren=0;
     else if  (!strcmp(argv[i],"--yydebug"))
@@ -88,12 +87,10 @@ int main(int argc, char *argv[]){
       exit(1);
     }
   }
-
   wsp=wortspeicherNeu();
-
   while(1){
     int res;
-    fputs("MyShell>> ", stdout);
+    fputs("github.com/Angusrocks>> ", stdout);
     fflush(stdout);
     res=yyparse();
     if(res==0){
@@ -106,7 +103,7 @@ int main(int argc, char *argv[]){
       kommandoLoeschen(k);
     }
     else
-      fputs("Fehlerhaftes Kommando\n", stderr);
+      fputs("Fehlerhaftes Kommando shell\n", stderr);
     wortspeicherLeeren(wsp);
   }
 }

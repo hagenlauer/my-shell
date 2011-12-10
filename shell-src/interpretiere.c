@@ -17,12 +17,16 @@
 
 int interpretiere(Kommando k, int forkexec);
 int assemble_pipeline2(Liste l, int descr);
+int assemble_pipeline3(Liste l);
 
 void do_execvp(int argc, char **args){
   execvp(*args, args);
   perror("exec-Fehler"); 
   fprintf(stderr, "bei Aufruf von \"%s\"\n", *args);
   exit(1);
+}
+int assemble_pipeline3(Liste l){ /*iterative loesung*/
+  return 0;
 }
 
 int assemble_pipeline2(Liste l, int descr){
@@ -51,7 +55,9 @@ int assemble_pipeline2(Liste l, int descr){
         if(close(fds[1]) == -1){perror("Parent couldn't close the pipe!"); exit(1);} /*close unused descriptor*/
         assemble_pipeline2(listeRest(l),fds[0]); /*return descr of new pipe*/
       } 
+      /*Processlisten operationen ADD*/
       waitpid(pid, NULL, 0);
+      /*Processlisten operationen STATUS*/
       return 0;
   }
 }

@@ -1,12 +1,12 @@
 typedef struct pl{
-	void* kopf; /*head ist der anfang, root was auch immer*/
-	void* process; /*process zeugs*/
-	struct pl *next;
-	struct pl *previous;
+	int pid;
+	int status;
+	pl *next;
 } *Proclist;
 
 
-extern Proclist  ProcListNeuLeer(void);
-extern void elementEinfuegen(Proclist pl, void* elem);
-extern void	elementEntfernen(Proclist pl, void* elem);
+extern Proclist ProcListNeuLeer(void);
+extern void elementEinfuegen(Proclist pl, int pid, int status);
+extern void	elementEntfernen(Proclist pl, int pid);
 extern void printList(Proclist pl);
+
