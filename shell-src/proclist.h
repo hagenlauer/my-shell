@@ -1,12 +1,9 @@
-typedef struct pl{
-	int pid;
-	int status;
-	pl *next;
-} *Proclist;
+typedef struct prozess {
+	int pid, status;
+	struct prozess *next;
+}*Prozess;
 
 
-extern Proclist ProcListNeuLeer(void);
-extern void elementEinfuegen(Proclist pl, int pid, int status);
-extern void	elementEntfernen(Proclist pl, int pid);
-extern void printList(Proclist pl);
 
+EXTERNCPP Prozess neueProcListe(void);
+void removeProzess(Prozess head, Prozess pro);

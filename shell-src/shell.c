@@ -50,7 +50,13 @@ extern int yydebug;
 extern int yyparse(void);
 extern int interpretiere(Kommando k, int forkexec);
 
-void signal_callback_handler(int signum)
+
+/*
+prozess kopf erstellen.
+*/
+
+
+void signal_handler(int signum)
 {
   /*printf("Caught signal %d\n",signum);*/
   /* Cleanup!!! and close up stuff here
@@ -64,11 +70,11 @@ void endesubprozess (int sig){
 
 void init_signalbehandlung(){
   /*Soll hier noch mehr rein?*/
-  signal(SIGCHLD, signal_callback_handler);
+  signal(SIGCHLD, signal_handler);
 }
 
 int main(int argc, char *argv[]){
-  int  zeigen=0, ausfuehren=1;
+  int  zeigen=1, ausfuehren=1;
   int status, i;
 
   init_signalbehandlung();

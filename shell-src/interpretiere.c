@@ -19,6 +19,10 @@ int interpretiere(Kommando k, int forkexec);
 int assemble_pipeline2(Liste l, int descr);
 int assemble_pipeline3(Liste l);
 
+
+
+
+
 void do_execvp(int argc, char **args){
   execvp(*args, args);
   perror("exec-Fehler"); 
@@ -72,7 +76,7 @@ int interpretiere_pipeline(Kommando k){
 
 int umlenkungen(Kommando k){
   /* Umlenkungen bearbeiten */
-  Liste ul = k->u.einfach.umlenkungen; /*das klappt schonmal, jetzt hier die ganze open scheisse einbauen*/
+  Liste ul = k->u.einfach.umlenkungen; 
   Umlenkung *u;
   int fd;
   while(ul){
@@ -103,6 +107,7 @@ int aufruf(Kommando k, int forkexec){
   /* Programmaufruf im aktuellen Prozess (forkexec==0)
      oder Subprozess (forkexec==1)
   */
+  int chld_state;
      
   if(forkexec==1){
     int pid=fork();
@@ -120,7 +125,10 @@ int aufruf(Kommando k, int forkexec){
     default:
       if(k->endeabwarten)
         /* So einfach geht das hier nicht! */ /*hier müssen tabellen einträge gemacht werden*/
-	      waitpid(pid, NULL, 0);
+	      waitpid(pid, &chld_state, 0);
+        if(chld_state == 256){
+          return 1; /*error*/
+        }
       return 0;
     }
   }else if (forkexec == 2){ /*testausgabe*/
