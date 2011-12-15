@@ -38,17 +38,22 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+
 #include "utils.h"
 #include "listen.h"
 #include "wortspeicher.h"
 #include "kommandos.h"
 #include "frontend.h"
 #include "parser.h"
+#include "proclist.h"
 #include "variablen.h"
+
+
 
 extern int yydebug;
 extern int yyparse(void);
 extern int interpretiere(Kommando k, int forkexec);
+extern Prozess *neueProcListe();
 
 
 /*
@@ -56,9 +61,11 @@ prozess kopf erstellen.
 */
 
 
+
+
 void signal_handler(int signum)
 {
-  /*printf("Caught signal %d\n",signum);*/
+  printf("Caught signal %d\n",signum);
   /* Cleanup!!! and close up stuff here
      Terminate program
     exit(signum); */
@@ -70,13 +77,21 @@ void endesubprozess (int sig){
 
 void init_signalbehandlung(){
   /*Soll hier noch mehr rein?*/
+  //p = neueProcListe();
+  //p = neueProcListe();
   signal(SIGCHLD, signal_handler);
 }
 
+
 int main(int argc, char *argv[]){
-  int  zeigen=1, ausfuehren=1;
+  int  zeigen=0, ausfuehren=1;
   int status, i;
 
+  Prozess *p = neueProcListe();
+  mach(p);
+  
+  fprintf(stderr, "%s\n", p->name);
+  
   init_signalbehandlung();
 
   yydebug=0;

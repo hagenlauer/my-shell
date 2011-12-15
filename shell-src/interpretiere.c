@@ -13,15 +13,19 @@
 #include "kommandos.h"
 #include "frontend.h"
 #include "parser.h"
+#include "proclist.h"
 #include "variablen.h"
 
 int interpretiere(Kommando k, int forkexec);
 int assemble_pipeline2(Liste l, int descr);
 int assemble_pipeline3(Liste l);
 
+Prozess *head;
 
-
-
+void mach(Prozess *p){
+  head = p;
+  fprintf(stderr, "%s\n", head->name);
+}
 
 void do_execvp(int argc, char **args){
   execvp(*args, args);
@@ -166,6 +170,11 @@ int interpretiere_einfach(Kommando k, int forkexec){
     }
   }
 
+  if (strcmp(worte[0], "status")==0) {
+    fputs("STATUS soll ausgegeben werden!\n", stderr);
+    show(head);
+    return 0;
+  }
   if (strcmp(worte[0], "cd")==0) {
     switch(anzahl){
     case 1:

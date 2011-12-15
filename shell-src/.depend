@@ -1,10 +1,11 @@
 shell.o: shell.c utils.h listen.h wortspeicher.h kommandos.h frontend.h \
- parser.h variablen.h
+ parser.h proclist.h variablen.h
 interpretiere.o: interpretiere.c utils.h listen.h wortspeicher.h \
- kommandos.h frontend.h parser.h variablen.h
+ kommandos.h frontend.h parser.h proclist.h variablen.h
 scanner.o: scanner.c utils.h listen.h kommandos.h frontend.h parser.h
 parser.o: parser.c utils.h listen.h frontend.h wortspeicher.h kommandos.h
 utils.o: utils.c utils.h
 kommandos.o: kommandos.c utils.h listen.h kommandos.h frontend.h parser.h
 wortspeicher.o: wortspeicher.c utils.h wortspeicher.h
 listen.o: listen.c utils.h listen.h
+proclist.o: proclist.c utils.h proclist.h

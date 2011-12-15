@@ -3,37 +3,35 @@
 #include "utils.h"
 #include "proclist.h"
 
-/*
-typedef struct prozess {
-	int pid, status;
-	struct prozess *next;
-}*Prozess;
-*/
 
 
-Prozess neueProcListe(){
-	Prozess neu = malloc(sizeof (struct prozess));
-	neu->pid = -1;
-	neu->status = -1;
+Prozess *neueProcListe(){
+	Prozess *neu = malloc(sizeof (struct prozess));
+	neu->pid = 0;
+	neu->status = 1;
 	neu->next = NULL;
+	neu->name = "shell";
 	return neu;
 }
 
-Prozess neuerProzess(int pid){
-	Prozess neu = malloc(sizeof (struct prozess));
+
+Prozess *neuerProzess(int pid, char * string){
+	Prozess *neu = malloc(sizeof (struct prozess));
 	neu->pid = pid;
-	neu->status = 0;
+	neu->status = 1;
 	neu->next = NULL;
+	neu->name = string;
 	return neu;
 }
 
-void append(Prozess head, Prozess p){
-	p->next = head->next; /**/
+void append(Prozess *head, Prozess *p){
+	p->next = head->next; 
 	head->next = p;
+	
 }
 
-Prozess lookup(Prozess head, int pid){
-	Prozess p = head;
+Prozess *lookup(Prozess *head, int pid){
+	Prozess *p = head;
 	while(p->next != NULL){
 		if(p->pid == pid){
 			return p;
@@ -43,44 +41,60 @@ Prozess lookup(Prozess head, int pid){
 	return p;
 }
 
-void show(Prozess head){
-	Prozess p = head;
-	while(p->next != NULL){
-		printf("%d %d\n", p->pid, p->status);
-		p = p->next;
-	}
-	printf("%d %d\n", p->pid, p->status);
+Prozess *next(Prozess *p){
+	return p->next;
 }
 
-void removeProzess(Prozess head, Prozess pro){
-	Prozess p = head;
+void show(Prozess *head){
+	Prozess *p = head;
+	fputs("PID \t STATUS \t KOMMANDO\n", stderr);
+	while(p != NULL){
+		printf("%d \t %d \t %s\n", p->pid, p->status, p->name);
+		p = p->next;
+	}
+}
+
+void show2(Prozess p){
+}
+
+void removeProzess(Prozess *head, Prozess *pro){
+	Prozess *p = head;
 	while(p->next != pro){
 		p = p->next;
 	}
-	
 	p->next = p->next->next;
-
 }
-void cleanList(Prozess head){
-	Prozess p = head;
-	do{
-		if(p->next->status==0){
-			p->next= p->next->next;
+void cleanList(Prozess *head){
+	Prozess *p = head;
+	while(p != NULL){
+		if(p->next != NULL && p->next->status == 0){
+			p->next = p->next->next;
+		}else{
+			p = p->next;
 		}
-		p = p->next;
-	}while(p->next != NULL);
+	}
 }
 
+
+/*
 int main(){
 
-	Prozess head = neueProcListe();
+	Prozess *procliste = neueProcListe();
 	//printf("%d %d %p\n", head->pid, head->status, head->next);
-	append(head, neuerProzess(1));
+	append(procliste, neuerProzess(1, "xterm"));
 	//printf("%d %d %p\n", head->pid, head->status, head->next);
-	append(head, neuerProzess(2));
-	show(head);
-	cleanList(head);
-	show(head);
-	//Prozess head = neueProcListe();
+	append(procliste, neuerProzess(2, "ls"));
+	cleanList(procliste);
+	show(procliste);
+	Prozess *p = lookup(procliste,2);
+	p->status = 0;
+	p = lookup(procliste, 1);
+	p->status = 0;
+	show(procliste);
+	cleanList(procliste);
+	show(procliste);
+	
 	return 0;
+
 }
+*/
