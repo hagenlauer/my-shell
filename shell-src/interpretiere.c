@@ -42,9 +42,18 @@ int assemble_pipeline2(Liste l, int descr){
   Kommando k = (Kommando)listeKopf(l);
   int fds[2];
   pid_t pid;
+
+  char  * worte = malloc(100 * sizeof(char)); /* 20 zeichen sollten genügen */
+  strcpy(worte, k->u.einfach.worte[0]);
+  fprintf(stderr, "asdlos %s\n", worte);
+  
   if(!listeIstleer(listeRest(l))){ /*if not is end of pipe*/
     pipe(fds);
   }
+  p = neuerProzess(0, worte);
+  append(head,p);
+  fputs("prozess angelegt! \n",stderr);
+  show(head);
   pid=fork();
   switch(pid){
     case -1:
@@ -60,12 +69,16 @@ int assemble_pipeline2(Liste l, int descr){
       interpretiere(k, 0); /* exit on status here */
       return 0;
     default:
+      p->pid = pid; /*set the aquired pid*/
+      show(head);
       if(!listeIstleer(listeRest(l))){
         if(close(fds[1]) == -1){perror("Parent couldn't close the pipe!"); exit(1);} /*close unused descriptor*/
         assemble_pipeline2(listeRest(l),fds[0]); /*return descr of new pipe*/
       } 
       /*Processlisten operationen ADD*/
       waitpid(pid, NULL, 0);
+      fputs("setze status!\n", stderr);
+      p->status = 1; /*mark him as zombie*/
       /*Processlisten operationen STATUS*/
       return 0;
   }
@@ -116,13 +129,14 @@ int aufruf(Kommando k, int forkexec){
   strcpy(worte, k->u.einfach.worte[0]);
   fprintf(stderr, "asdlos %s\n", worte);
   int chld_state;
+  int waitreturn;
      
   if(forkexec==1){
 
     p = neuerProzess(0, worte);
     append(head,p);
     fputs("prozess angelegt! \n",stderr);
-    show(head);
+    /*show(head);*/
     int pid=fork();
 
     switch (pid){
@@ -140,11 +154,18 @@ int aufruf(Kommando k, int forkexec){
       show(head);
       if(k->endeabwarten){
         /* So einfach geht das hier nicht! */  
-        waitpid(pid, &chld_state, 0);
-        fputs("setze status!\n", stderr);
-        p->status = 1; /*mark him as zombie*/
-        if(chld_state == 256){
-          return 1; /*error*/
+        waitreturn = waitpid(pid, &chld_state, 0);
+
+        if(waitreturn > 0){ /*parent gets signal*/
+          fputs("setze status!\n", stderr);
+          p->status = 1; /*mark him as zombie*/
+          if(chld_state == 256){
+            return 1; /*error*/
+          }else{
+            return 0;
+          } 
+        }else{
+          fputs("Sighandler will get signal! \n",stderr);
         }
       }
       return 0;
