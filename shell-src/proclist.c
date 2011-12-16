@@ -8,7 +8,7 @@
 Prozess *neueProcListe(){
 	Prozess *neu = malloc(sizeof (struct prozess));
 	neu->pid = 0;
-	neu->status = 1;
+	neu->status = 0;
 	neu->next = NULL;
 	neu->name = "shell";
 	return neu;
@@ -18,7 +18,7 @@ Prozess *neueProcListe(){
 Prozess *neuerProzess(int pid, char * string){
 	Prozess *neu = malloc(sizeof (struct prozess));
 	neu->pid = pid;
-	neu->status = 1;
+	neu->status = 0;
 	neu->next = NULL;
 	neu->name = string;
 	return neu;
@@ -47,9 +47,9 @@ Prozess *next(Prozess *p){
 
 void show(Prozess *head){
 	Prozess *p = head;
-	fputs("PID \t STATUS \t KOMMANDO\n", stderr);
+	fputs("PID\tSTATUS\tKOMMANDO\n", stderr);
 	while(p != NULL){
-		printf("%d \t %d \t %s\n", p->pid, p->status, p->name);
+		printf("%d \t %d      %s\n", p->pid, p->status, p->name, p);
 		p = p->next;
 	}
 }
@@ -67,7 +67,7 @@ void removeProzess(Prozess *head, Prozess *pro){
 void cleanList(Prozess *head){
 	Prozess *p = head;
 	while(p != NULL){
-		if(p->next != NULL && p->next->status == 0){
+		if(p->next != NULL && p->next->status > 0){ /*0 is running, 1 natural kill, 2 is killed by sig*/
 			p->next = p->next->next;
 		}else{
 			p = p->next;

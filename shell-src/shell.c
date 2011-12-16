@@ -60,12 +60,21 @@ extern Prozess *neueProcListe();
 prozess kopf erstellen.
 */
 
+Prozess *headshell;
 
 
+void signal_handler(int signum){
+  pid_t pid;
+  pid = wait(NULL);
+  fprintf(stderr,"Caught signal %d from %d\n",signum, pid);
+  
+  Prozess *p = lookup(headshell, pid);
+  if(p == NULL){
+    headshell->next->status = 1;
+  }else{
+    p->status = 1;
+  }
 
-void signal_handler(int signum)
-{
-  printf("Caught signal %d\n",signum);
   /* Cleanup!!! and close up stuff here
      Terminate program
     exit(signum); */
@@ -87,10 +96,11 @@ int main(int argc, char *argv[]){
   int  zeigen=0, ausfuehren=1;
   int status, i;
 
-  Prozess *p = neueProcListe();
-  mach(p);
+  /*Prozessliste initialisieren*/
+  headshell = neueProcListe();
+  mach(headshell);
   
-  fprintf(stderr, "%s\n", p->name);
+  fprintf(stderr, "%s\n", headshell->name);
   
   init_signalbehandlung();
 

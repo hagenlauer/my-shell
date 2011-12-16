@@ -20,7 +20,8 @@ int interpretiere(Kommando k, int forkexec);
 int assemble_pipeline2(Liste l, int descr);
 int assemble_pipeline3(Liste l);
 
-Prozess *head;
+Prozess *head; /*wird von shell.c aus initialisiert*/
+Prozess *p;
 
 void mach(Prozess *p){
   head = p;
@@ -111,9 +112,17 @@ int aufruf(Kommando k, int forkexec){
   /* Programmaufruf im aktuellen Prozess (forkexec==0)
      oder Subprozess (forkexec==1)
   */
+  char  * worte = malloc(100 * sizeof(char)); /* 20 zeichen sollten genügen */
+  strcpy(worte, k->u.einfach.worte[0]);
+  fprintf(stderr, "asdlos %s\n", worte);
   int chld_state;
      
   if(forkexec==1){
+
+    p = neuerProzess(0, worte);
+    append(head,p);
+    fputs("prozess angelegt! \n",stderr);
+    show(head);
     int pid=fork();
 
     switch (pid){
@@ -127,12 +136,17 @@ int aufruf(Kommando k, int forkexec){
       abbruch("interner Fehler 001"); /* sollte nie ausgeführt werden */
       return(-1);
     default:
-      if(k->endeabwarten)
-        /* So einfach geht das hier nicht! */ /*hier müssen tabellen einträge gemacht werden*/
-	      waitpid(pid, &chld_state, 0);
+      p->pid = pid; /*set the aquired pid*/
+      show(head);
+      if(k->endeabwarten){
+        /* So einfach geht das hier nicht! */  
+        waitpid(pid, &chld_state, 0);
+        fputs("setze status!\n", stderr);
+        p->status = 1; /*mark him as zombie*/
         if(chld_state == 256){
           return 1; /*error*/
         }
+      }
       return 0;
     }
   }else if (forkexec == 2){ /*testausgabe*/
@@ -173,6 +187,13 @@ int interpretiere_einfach(Kommando k, int forkexec){
   if (strcmp(worte[0], "status")==0) {
     fputs("STATUS soll ausgegeben werden!\n", stderr);
     show(head);
+
+    return 0;
+  }
+  if (strcmp(worte[0], "clean")==0) {
+    fputs("CLEAN!\n", stderr);
+    cleanList(head);
+
     return 0;
   }
   if (strcmp(worte[0], "cd")==0) {
