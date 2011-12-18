@@ -69,7 +69,7 @@ void signal_handler(int signum){
 
   pid = waitpid(pid, &chld_state, WNOHANG);
   if(pid > 0){
-    fprintf(stderr,"Caught signal %d from %d\n",signum, pid);
+    fprintf(stderr,"Caught signal %d from %d and state %d\n",signum, pid, chld_state);
     Prozess *p = lookup(headshell, pid);
     if(p == NULL){
       headshell->next->status = 1;
@@ -79,7 +79,6 @@ void signal_handler(int signum){
   }else{
     fputs("parent got the signal!\n", stderr);
   }
-  
 }
 
 void endesubprozess (int sig){
