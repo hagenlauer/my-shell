@@ -54,42 +54,67 @@ extern int yydebug;
 extern int yyparse(void);
 extern int interpretiere(Kommando k, int forkexec);
 extern Prozess *neueProcListe();
+extern void mach(Prozess *p);
 
-
-/*
-prozess kopf erstellen.
-*/
 
 Prozess *headshell;
 
 
-void signal_handler(int signum){
+
+void signal_handler0(int signum){
   pid_t pid;
   int chld_state;
-
-  pid = waitpid(pid, &chld_state, WNOHANG);
+  fputs("sigcall\n", stderr);
+  pid = waitpid(-1, &chld_state, WNOHANG);
+  fprintf(stderr, "Sighandler: %d\n", pid);
   if(pid > 0){
-    fprintf(stderr,"Caught signal %d from %d and state %d\n",signum, pid, chld_state);
+    /*fprintf(stderr,"Caught signal %d from %d and state %d\n",signum, pid, chld_state);*/
     Prozess *p = lookup(headshell, pid);
     if(p == NULL){
-      headshell->next->status = 1;
+      headshell->next->status = -1;
     }else{
-      p->status = 1;
+      if(chld_state == 256){
+        p->status = -2; /*exit(error)*/
+      }else{
+        p->status = -1; /*mark him as zombie*/
+      }
     }
   }else{
-    fputs("parent got the signal!\n", stderr);
+    /*fputs("parent got the signal!\n", stderr);*/
   }
+}
+void signal_handler1(int signum){
+  fputs("sigcall\n", stderr);
 }
 
 void endesubprozess (int sig){
-  /*was soll ich hier machen?!?*/
+  /*printf("Sighandler\n");*/
+  pid_t pid;
+  int chld_state;
+  pid = waitpid(-1, &chld_state, WNOHANG);
+  /*fprintf(stderr, "Sighandler: %d , %d , %d\n", pid, WEXITSTATUS(chld_state), WTERMSIG(chld_state));*/
+  if(pid > 0){
+    /*fprintf(stderr,"Caught signal %d from %d and state %d\n",signum, pid, chld_state);*/
+    Prozess *p = lookup(headshell, pid);
+    if(p == NULL){
+      /*headshell->next->pid = pid;*/
+      /*fputs("in headshell\n", stderr);*/
+      headshell->next->status = WEXITSTATUS(chld_state) + WTERMSIG(chld_state);
+    }else{
+      p->status = WEXITSTATUS(chld_state) + WTERMSIG(chld_state); /*exit(error)*/
+    }
+  }else{
+    /*fputs("parent got the signal!\n", stderr);*/
+  }
 }
 
 void init_signalbehandlung(){
-  /*Soll hier noch mehr rein?*/
-  //p = neueProcListe();
-  //p = neueProcListe();
-  signal(SIGCHLD, signal_handler);
+  /*signal(SIGCHLD, signal_handler1);*/
+  struct sigaction action;
+  action.sa_handler = endesubprozess;
+  action.sa_flags = SA_RESTART | SA_NODEFER;
+  action.sa_flags &= ~SA_RESETHAND;
+  if(sigaction(SIGCHLD,&action,NULL)==-1){perror("Error in Sigaction");exit(1);}
 }
 
 
@@ -101,7 +126,7 @@ int main(int argc, char *argv[]){
   headshell = neueProcListe();
   mach(headshell);
   
-  fprintf(stderr, "%s\n", headshell->name);
+  /*fprintf(stderr, "%s\n", headshell->name);*/
   
   init_signalbehandlung();
 

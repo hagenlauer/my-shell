@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h> 
+#include <unistd.h>
 #include "utils.h"
 #include "proclist.h"
 
@@ -7,8 +9,8 @@
 
 Prozess *neueProcListe(){
 	Prozess *neu = malloc(sizeof (struct prozess));
-	neu->pid = 0;
-	neu->status = 0;
+	neu->pid = getpid();
+	neu->status = -1;
 	neu->next = NULL;
 	neu->name = "shell";
 	return neu;
@@ -18,7 +20,7 @@ Prozess *neueProcListe(){
 Prozess *neuerProzess(int pid, char * string){
 	Prozess *neu = malloc(sizeof (struct prozess));
 	neu->pid = pid;
-	neu->status = 0;
+	neu->status = -1;
 	neu->next = NULL;
 	neu->name = string;
 	return neu;
@@ -47,9 +49,29 @@ Prozess *next(Prozess *p){
 
 void show(Prozess *head){
 	Prozess *p = head;
-	fputs("PID\tSTATUS\tKOMMANDO\n", stderr);
+	fputs("PID      STATUS       KOMMANDO\n", stderr);
 	while(p != NULL){
-		printf("%d \t %d      %s\n", p->pid, p->status, p->name, p);
+		switch (p->status){
+			case -1:
+				printf("%d \t running      %s\n", p->pid, p->name);
+				break;
+			case 0:
+				printf("%d \t exit(0)      %s\n", p->pid, p->name);
+				break;
+			case 1:
+				printf("%d \t exit(1)      %s\n", p->pid, p->name);
+				break;
+			case 2:
+				printf("%d \t exit(2)      %s\n", p->pid, p->name);
+				break;
+			case 3:
+				printf("%d \t exit(3)      %s\n", p->pid, p->name);
+				break;	
+			default:
+				printf("%d \t signal(%02d)   %s\n", p->pid, p->status,p->name);
+				break;
+		}
+		
 		p = p->next;
 	}
 }
@@ -67,7 +89,7 @@ void removeProzess(Prozess *head, Prozess *pro){
 void cleanList(Prozess *head){
 	Prozess *p = head;
 	while(p != NULL){
-		if(p->next != NULL && p->next->status > 0){ /*0 is running, 1 natural kill, 2 is killed by sig*/
+		if(p->next != NULL && p->next->status != -1){ /*0 is running, 1 natural kill, 2 is killed by sig*/
 			p->next = p->next->next;
 		}else{
 			p = p->next;

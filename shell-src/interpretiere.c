@@ -25,7 +25,7 @@ Prozess *p;
 
 void mach(Prozess *p){
   head = p;
-  fprintf(stderr, "%s\n", head->name);
+  /*fprintf(stderr, "%s\n", head->name);*/
 }
 
 void do_execvp(int argc, char **args){
@@ -42,18 +42,19 @@ int assemble_pipeline2(Liste l, int descr){
   Kommando k = (Kommando)listeKopf(l);
   int fds[2];
   pid_t pid;
+  int chld_state;
+  int returnpid;
 
   char  * worte = malloc(100 * sizeof(char)); /* 20 zeichen sollten genügen */
   strcpy(worte, k->u.einfach.worte[0]);
-  fprintf(stderr, "asdlos %s\n", worte);
   
   if(!listeIstleer(listeRest(l))){ /*if not is end of pipe*/
     pipe(fds);
   }
   p = neuerProzess(0, worte);
   append(head,p);
-  fputs("prozess angelegt! \n",stderr);
-  show(head);
+  /*fprintf(stderr, "prozess angelegt! %s\n", p->name);*/
+  /*show(head);*/
   pid=fork();
   switch(pid){
     case -1:
@@ -65,20 +66,25 @@ int assemble_pipeline2(Liste l, int descr){
       if(!listeIstleer(listeRest(l))){ /* !=END else do nothing to stdout*/
         if(dup2(fds[1],1) == -1){perror("Error dup2 fds[1]->1");fprintf(stderr, "descr: %d\n", fds[1]);exit(1);}
         if(close(fds[1]) == -1){perror("Error close fds[1]");exit(1);}
+        if(close(fds[0]) == -1){perror("Error close fds[1]");exit(1);}
       }
       interpretiere(k, 0); /* exit on status here */
       return 0;
     default:
       p->pid = pid; /*set the aquired pid*/
-      show(head);
+      /*show(head);*/
       if(!listeIstleer(listeRest(l))){
         if(close(fds[1]) == -1){perror("Parent couldn't close the pipe!"); exit(1);} /*close unused descriptor*/
         assemble_pipeline2(listeRest(l),fds[0]); /*return descr of new pipe*/
-      } 
+        close(fds[0]);
+      }
       /*Processlisten operationen ADD*/
-      waitpid(pid, NULL, 0);
-      fputs("setze status!\n", stderr);
-      p->status = 1; /*mark him as zombie*/
+      returnpid = waitpid(pid, &chld_state, 0);
+      /*fputs("setze status!\n", stderr);*/
+      if(returnpid == pid){
+        p = lookup(head, pid); 
+        p->status = WEXITSTATUS(chld_state) + WTERMSIG(chld_state); /*mark him as zombie*/
+      }
       /*Processlisten operationen STATUS*/
       return 0;
   }
@@ -125,19 +131,19 @@ int aufruf(Kommando k, int forkexec){
   /* Programmaufruf im aktuellen Prozess (forkexec==0)
      oder Subprozess (forkexec==1)
   */
-  char  * worte = malloc(100 * sizeof(char)); /* 20 zeichen sollten genügen */
-  strcpy(worte, k->u.einfach.worte[0]);
-  fprintf(stderr, "asdlos %s\n", worte);
   int chld_state;
   int waitreturn;
+  int pid;
+  char  * worte = malloc(100 * sizeof(char)); /* 20 zeichen sollten genügen */
+  strcpy(worte, k->u.einfach.worte[0]);
      
   if(forkexec==1){
 
     p = neuerProzess(0, worte);
     append(head,p);
-    fputs("prozess angelegt! \n",stderr);
+    /*fputs("prozess angelegt! \n",stderr);*/
     /*show(head);*/
-    int pid=fork();
+    pid=fork();
 
     switch (pid){
     case -1:
@@ -150,27 +156,30 @@ int aufruf(Kommando k, int forkexec){
       abbruch("interner Fehler 001"); /* sollte nie ausgeführt werden */
       return(-1);
     default:
-      p->pid = pid; /*set the aquired pid*/
-      show(head);
+      p->pid = pid;
+      /*show(head);*/
       if(k->endeabwarten){
-        /* So einfach geht das hier nicht! */  
         waitreturn = waitpid(pid, &chld_state, 0);
-
-        if(waitreturn > 0){ /*parent gets signal*/
-          fputs("setze status!\n", stderr);
-          p->status = 1; /*mark him as zombie*/
-          if(chld_state == 256){
+        /*fprintf(stderr, "parent wait: %d \n", waitreturn);*/
+        if(waitreturn == pid){ /*parent gets signal*/
+          /*fputs("setze status!\n", stderr);*/
+          p->status = WEXITSTATUS(chld_state) + WTERMSIG(chld_state); /*exit(0), mark him as zombie*/
+          if(WEXITSTATUS(chld_state) > 0 || WIFSIGNALED(chld_state) == 1){
+            p->status = WEXITSTATUS(chld_state) + WTERMSIG(chld_state);
             return 1; /*error*/
           }else{
+            p->status = 0;
             return 0;
           } 
         }else{
-          fputs("Sighandler will get signal! \n",stderr);
+          /*fputs("Sighandler will get signal! \n",stderr);*/
         }
+      }else{
+        fprintf(stderr, "PID=%d\n", pid);
+        return 0;
       }
-      return 0;
     }
-  }else if (forkexec == 2){ /*testausgabe*/
+  }else if (forkexec == 2){ /*test only never mind it*/
       /*fputs("lolkaese\n",stderr);*/
       kommandoZeigen(k);
       exit(1);
@@ -185,6 +194,7 @@ int aufruf(Kommando k, int forkexec){
     exit(1);
     return 1;
   }
+  return 0;
 }
 
 
@@ -206,15 +216,12 @@ int interpretiere_einfach(Kommando k, int forkexec){
   }
 
   if (strcmp(worte[0], "status")==0) {
-    fputs("STATUS soll ausgegeben werden!\n", stderr);
     show(head);
-
+    cleanList(head);
     return 0;
   }
   if (strcmp(worte[0], "clean")==0) {
-    fputs("CLEAN!\n", stderr);
     cleanList(head);
-
     return 0;
   }
   if (strcmp(worte[0], "cd")==0) {
@@ -233,7 +240,7 @@ int interpretiere_einfach(Kommando k, int forkexec){
 }
 
 int interpretiere(Kommando k, int forkexec){ /*evtl forkexec manipulieren f. exec ohne fork*/
-  int status;
+  int status = 0;
 
   switch(k->typ){
   case K_LEER: 
