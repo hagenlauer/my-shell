@@ -15,7 +15,7 @@ scanner.o: scanner.c parser.h utils.h kommandos.h
 
 shell:  $(OBJECTS)
 	gcc $(CFLAGS) -o $@  $^ -ll
-# use -ll for flex on macosx otherwise -lfl
+
 depend: $(CSOURCES)
 	 gcc -MM $(CSOURCES) 2> make_depend.log > .depend 
 	 grep -v "linker input" make_depend.log | cat > /dev/fd/2

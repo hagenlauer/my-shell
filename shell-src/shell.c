@@ -91,6 +91,7 @@ void endesubprozess (int sig){
   /*printf("Sighandler\n");*/
   pid_t pid;
   int chld_state;
+  do{
   pid = waitpid(-1, &chld_state, WNOHANG);
   /*fprintf(stderr, "Sighandler: %d , %d , %d\n", pid, WEXITSTATUS(chld_state), WTERMSIG(chld_state));*/
   if(pid > 0){
@@ -106,6 +107,7 @@ void endesubprozess (int sig){
   }else{
     /*fputs("parent got the signal!\n", stderr);*/
   }
+}while(pid > 0);
 }
 
 void init_signalbehandlung(){
