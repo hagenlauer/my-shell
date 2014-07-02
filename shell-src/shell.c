@@ -107,6 +107,7 @@ void endesubprozess (int sig){
   }else{
     /*fputs("parent got the signal!\n", stderr);*/
   }
+  //break; // für die Schleife
 }while(pid > 0);
 }
 
